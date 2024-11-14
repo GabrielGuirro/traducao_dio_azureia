@@ -1,0 +1,44 @@
+# Passo 1: Instalar o SDK do Azure
+!pip install azure-ai-translation-document
+
+# Passo 2: Importar as bibliotecas necessárias e configurar a API
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.translation.document import DocumentTranslationClient, TranslationGlossary
+
+# Configuração das credenciais do Azure Translator
+endpoint = "https://<seu-endpoint>.cognitiveservices.azure.com/"
+key = "<sua-chave>"
+
+# Inicialização do cliente de tradução
+client = DocumentTranslationClient(endpoint, AzureKeyCredential(key))
+
+# Passo 3: Configuração de glossário (opcional)
+# Você pode criar um glossário no formato CSV, com dois colunas: termo de origem, termo de destino
+# O glossário deve estar em um local acessível (ex. Google Drive)
+glossary_url = "<url_do_glossário.csv>"  # Substitua pelo URL do glossário (opcional)
+
+glossary = TranslationGlossary(glossary_url=glossary_url, source_language_code="en", target_language_code="pt")
+
+# Passo 4: Função para realizar a tradução com glossário
+def translate_text(document_url, target_language="pt", glossaries=None):
+    poller = client.begin_translation(
+        source_url=document_url,
+        target_language=target_language,
+        glossaries=[glossaries] if glossaries else None
+    )
+    
+    # Aguarda a conclusão da tradução e coleta os resultados
+    result = poller.result()
+    
+    # Exibe as traduções e status
+    for document in result:
+        if document.status == "Succeeded":
+            print(f"Tradução concluída com sucesso para o documento: {document.translated_document_url}")
+        else:
+            print(f"Falha na tradução do documento: {document.source_document_url} - Status: {document.status}")
+
+# Passo 5: Traduzir um documento
+document_url = "<url_do_seu_documento_para_traduzir>"  # URL do documento que deseja traduzir
+translate_text(document_url, target_language="pt", glossaries=glossary)
+
+# Nota: Certifique-se de que o documento e glossário estejam em URLs acessíveis pela API do Azure (ex. armazenados no Azure Blob Storage).
