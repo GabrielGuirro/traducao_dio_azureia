@@ -1,0 +1,88 @@
+Requisitos do Projeto
+Conta no Azure e Configuração do Azure Translator:
+
+Crie uma conta no Azure.
+Vá ao Portal do Azure e crie um recurso de Azure Translator.
+Obtenha o Endpoint e a Chave de API nas configurações do recurso criado.
+Armazenamento de Documentos e Glossário:
+
+Armazene os documentos e o glossário em um local acessível pela API do Azure, como o Azure Blob Storage.
+O glossário deve ser um arquivo CSV com duas colunas (termos de origem e termos de destino) e deve estar acessível por URL.
+Exemplo de glossário CSV:
+css
+Copiar código
+Termo em inglês,Termo em português
+Computer,Computador
+Server,Servidor
+Google Colab:
+
+Acesse Google Colab para usar o ambiente Python baseado em nuvem onde o código será executado.
+Passo a Passo para Utilizar o Código
+Passo 1: Configuração do Ambiente no Google Colab
+Abra o Google Colab e crie um novo notebook.
+No primeiro bloco, execute o comando para instalar o SDK do Azure Translator:
+python
+Copiar código
+!pip install azure-ai-translation-document
+Passo 2: Configuração das Credenciais do Azure
+No Azure Portal, copie o Endpoint e a Chave de API.
+Substitua <seu-endpoint> e <sua-chave> pelo seu endpoint e chave reais no código a seguir:
+python
+Copiar código
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.translation.document import DocumentTranslationClient, TranslationGlossary
+
+endpoint = "https://<seu-endpoint>.cognitiveservices.azure.com/"
+key = "<sua-chave>"
+
+client = DocumentTranslationClient(endpoint, AzureKeyCredential(key))
+Passo 3: Configuração do Glossário (Opcional)
+Armazene o arquivo CSV do glossário no Azure Blob Storage ou em um local com URL acessível.
+Insira a URL do glossário no código:
+python
+Copiar código
+glossary_url = "<url_do_glossário.csv>"  # Substitua pela URL do glossário
+
+glossary = TranslationGlossary(
+    glossary_url=glossary_url,
+    source_language_code="en",  # Idioma do texto de origem (ex: inglês)
+    target_language_code="pt"   # Idioma do texto de destino (ex: português)
+)
+Passo 4: Configuração do Documento para Tradução
+Armazene o documento que deseja traduzir em um local acessível e copie o link direto para o arquivo.
+Defina o URL do documento no código:
+python
+Copiar código
+document_url = "<url_do_seu_documento_para_traduzir>"  # URL do documento a ser traduzido
+Passo 5: Definir a Função para Traduzir o Documento
+Copie e execute a função de tradução abaixo. Ela envia o documento e, se um glossário foi configurado, aplica a terminologia consistente.
+python
+Copiar código
+def translate_text(document_url, target_language="pt", glossaries=None):
+    poller = client.begin_translation(
+        source_url=document_url,
+        target_language=target_language,
+        glossaries=[glossaries] if glossaries else None
+    )
+    
+    # Aguarda a conclusão da tradução e coleta os resultados
+    result = poller.result()
+    
+    # Exibe as traduções e status
+    for document in result:
+        if document.status == "Succeeded":
+            print(f"Tradução concluída com sucesso para o documento: {document.translated_document_url}")
+        else:
+            print(f"Falha na tradução do documento: {document.source_document_url} - Status: {document.status}")
+Passo 6: Executar a Tradução
+Execute a função translate_text com os parâmetros document_url, target_language e o glossary (opcional).
+
+python
+Copiar código
+translate_text(document_url, target_language="pt", glossaries=glossary)
+O código exibirá o link para o documento traduzido ou informará o status caso a tradução não tenha sido bem-sucedida.
+
+Observações Importantes
+Verifique URLs Acessíveis: Documentos e glossários precisam estar em URLs acessíveis pela API do Azure, como no Azure Blob Storage.
+Verifique os Idiomas: Certifique-se de especificar corretamente o idioma do texto original e o idioma de destino.
+Glossário: O glossário é opcional, mas recomendado para melhorar a precisão terminológica.
